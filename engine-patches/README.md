@@ -1,30 +1,31 @@
-# Memoria temporal de los NPC
+# Integración de memoria temporal de NPC
 
-Este directorio contiene el primer parche de IA para el **motor C++ reVC**.
+Este parche está dirigido al código fuente de `origami-ltd/wasm-revc`, que compila el motor reVC con Emscripten. No modifica las físicas, colisiones, vehículos ni controles.
 
-## Regla de memoria
+## Comportamiento incluido
 
-Un peatón no recuerda al jugador solo por verlo o porque este se acerque. El recuerdo se crea únicamente cuando se cumplen todas estas condiciones:
+- La memoria dura 60 segundos de partida y no se guarda en disco.
+- Solo se crea cuando el motor registra un robo de vehículo o un atropello causado por el jugador.
+- El peatón debe estar cerca del incidente, tener visión del jugador y línea de visión despejada.
+- Los peatones con más miedo que temperamento corren para alejarse.
+- Los de temperamento más alto se alejan caminando mientras miran al jugador.
+- Ver al jugador sin que haya ocurrido un incidente presenciado no crea memoria.
 
-1. El motor ha registrado un incidente atribuible al jugador (agresión, disparo, atropello, robo de vehículo, explosión u otro evento violento del juego).
-2. El peatón estaba cerca del lugar del incidente.
-3. El peatón tenía al jugador en su campo de visión.
-4. La línea de visión entre ambos estaba despejada.
+La reacción de confrontación física no está incluida en esta versión; el comportamiento de temperamento alto es una retirada cautelosa y no violenta.
 
-El recuerdo dura 60 segundos de partida y no se guarda en disco. Al volver a ver al jugador a corta distancia, el peatón decide según sus estadísticas existentes: temperamento alto puede enfrentarse; en caso contrario huye. No se modifica el movimiento, las colisiones ni la física.
+## Prueba dentro del port
 
-## Importante sobre el port actual
+El workflow de GitHub compila una segunda versión independiente en `dist/npc-engine/`. Cuando la compilación termine correctamente, abre:
 
-`reVCDOS-avanced` contiene el lanzador web y un motor ya compilado en WebAssembly; no contiene los archivos C++ del motor. Por eso este parche todavía **no cambia el comportamiento del juego publicado**. Está preparado para el árbol fuente con soporte de compilación Emscripten de [origami-ltd/wasm-revc](https://github.com/origami-ltd/wasm-revc), que usa el mismo código reVC para los módulos de peatones y eventos.
+`/npc-engine/index.html`
 
-Para aplicarlo en una copia local del árbol fuente compatible:
+Esta versión utiliza el port WebAssembly de reVC y requiere:
+- Navegador compatible con WebGL 2 y SharedArrayBuffer.
+- Servir la web por HTTPS o localhost.
+- Seleccionar una instalación propia y compatible de GTA Vice City desde el selector del navegador.
 
-```bash
-git apply engine-patches/npc-memory-reactions.patch
-```
+El port DOS.Zone original permanece disponible en la raíz y no se reemplaza. El nuevo motor no usa el CDN de assets del port DOS.Zone.
 
-Después hay que compilar el motor WebAssembly y sustituir el WASM junto con el cargador compatible. No se debe reemplazar solo el archivo WASM del port DOS.Zone: los cargadores y las versiones del motor deben coincidir.
+## Compilación
 
-## Alcance de esta primera parte
-
-Este parche implementa el recuerdo condicionado y la reacción al reencontrarse. El envío de denuncias a teléfonos y la búsqueda policial persistente son fases separadas; no se anuncian como implementadas aquí.
+El workflow descarga versiones fijadas del workspace `wasm.com.br` y `wasm-revc`, aplica este parche, compila con Emscripten y publica la interfaz y los binarios juntos. La salida JavaScript y WASM se mantiene como un par de la misma compilación para evitar incompatibilidades.
