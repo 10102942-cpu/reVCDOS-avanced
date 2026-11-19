@@ -115,6 +115,12 @@ diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 diff --git a/web/src/main.ts b/web/src/main.ts
 --- a/web/src/main.ts
 +++ b/web/src/main.ts
-@@ -224,1 +224,1 @@
+@@ -219,7 +219,7 @@
+ // The emscripten build is produced by CMake (scripts/build-web.sh) and served beside this page.
+ // It has to stay invisible to the bundler: Vite rewrites even a @vite-ignore'd dynamic import of
+ // a public/ path, and the engine is not something to bundle anyway. An indirect import through
+ // Function() is a plain runtime fetch that Vite cannot see.
+ // Absence is a normal state — the shell still runs so the install gate works before a build exists.
 -const ENGINE_URL = "/reVC.js";
 +const ENGINE_URL = `${import.meta.env.BASE_URL}reVC.js`;
+ const importEngine = new Function("url", "return import(url)") as (url: string) => Promise<unknown>;
