@@ -273,6 +273,17 @@ async def setup_unpacked(source: str) -> tuple:
 
 app = FastAPI()
 
+# The alternate reVC build uses SharedArrayBuffer. Keep cross-origin isolation
+# enabled for the nested preview only; the original DOS.Zone routes stay unchanged.
+@app.middleware("http")
+async def add_npc_engine_cross_origin_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/npc-engine" or request.url.path.startswith("/npc-engine/"):
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+    return response
+
+
 if args.login and args.password:
     app.add_middleware(BasicAuthMiddleware, username=args.login, password=args.password)
 
