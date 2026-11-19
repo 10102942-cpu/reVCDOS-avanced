@@ -1,0 +1,4 @@
+NPC-memory reVC browser preview.
+Built by GitHub Actions from pinned wasm.ltd/reVC sources.
+Requires WebGL 2, SharedArrayBuffer, HTTPS/localhost, and a compatible local GTA Vice City installation selected by the player.
+The original DOS.Zone port remains at the repository root.
