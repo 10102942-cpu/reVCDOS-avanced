@@ -1,31 +1,39 @@
 # Integración de memoria temporal de NPC
 
-Este parche está dirigido al código fuente de `origami-ltd/wasm-revc`, que compila el motor reVC con Emscripten. No modifica las físicas, colisiones, vehículos ni controles.
+Este parche está aplicado al código fuente de `origami-ltd/wasm-revc` y compilado con Emscripten. La salida de prueba está en `dist/npc-engine/`. El port DOS.Zone original sigue en la raíz y no se reemplaza.
 
 ## Comportamiento incluido
 
 - La memoria dura 60 segundos de partida y no se guarda en disco.
 - Solo se crea cuando el motor registra un robo de vehículo o un atropello causado por el jugador.
-- El peatón debe estar cerca del incidente, tener visión del jugador y línea de visión despejada.
+- El peatón debe estar cerca del incidente, tener al jugador en su campo de visión y una línea de visión despejada.
 - Los peatones con más miedo que temperamento corren para alejarse.
-- Los de temperamento más alto se alejan caminando mientras miran al jugador.
-- Ver al jugador sin que haya ocurrido un incidente presenciado no crea memoria.
+- Los de temperamento más alto se retiran caminando mientras miran al jugador.
+- Ver al jugador sin un incidente presenciado no crea memoria.
 
-La reacción de confrontación física no está incluida en esta versión; el comportamiento de temperamento alto es una retirada cautelosa y no violenta.
+Esta primera versión no incluye una reacción de combate. No se cambian físicas, colisiones, vehículos ni controles.
 
-## Prueba dentro del port
+## Abrir la versión de prueba
 
-El workflow de GitHub compila una segunda versión independiente en `dist/npc-engine/`. Cuando la compilación termine correctamente, abre:
+Desde una copia local de esta rama:
 
-`/npc-engine/index.html`
+```bash
+python -m pip install -r requirements.txt
+python server.py
+```
 
-Esta versión utiliza el port WebAssembly de reVC y requiere:
+Luego abre `http://localhost:8000/npc-engine/index.html`.
+
+El servidor añade los encabezados de aislamiento necesarios para `SharedArrayBuffer` en esa ruta. También se puede alojar la carpeta `dist/` en un servidor HTTPS que conserve esos encabezados.
+
+## Requisitos del motor de prueba
+
 - Navegador compatible con WebGL 2 y SharedArrayBuffer.
-- Servir la web por HTTPS o localhost.
-- Seleccionar una instalación propia y compatible de GTA Vice City desde el selector del navegador.
+- HTTPS o localhost.
+- Una instalación local compatible de GTA Vice City que el usuario debe seleccionar desde el navegador.
 
-El port DOS.Zone original permanece disponible en la raíz y no se reemplaza. El nuevo motor no usa el CDN de assets del port DOS.Zone.
+Este motor alternativo no reutiliza los archivos que el port DOS.Zone descarga de su CDN; por eso necesita seleccionar los datos locales del juego.
 
 ## Compilación
 
-El workflow descarga versiones fijadas del workspace `wasm.com.br` y `wasm-revc`, aplica este parche, compila con Emscripten y publica la interfaz y los binarios juntos. La salida JavaScript y WASM se mantiene como un par de la misma compilación para evitar incompatibilidades.
+El workflow `.github/workflows/build-npc-engine.yml` descarga versiones fijadas del workspace `wasm.com.br` y `wasm-revc`, aplica `npc-memory-reactions.patch`, compila el motor WebAssembly y publica la interfaz y los binarios juntos.
