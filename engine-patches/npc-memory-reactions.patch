@@ -1,137 +1,122 @@
 diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
 --- a/src/peds/CivilianPed.h
 +++ b/src/peds/CivilianPed.h
-@@ -12,11 +12,15 @@
+@@ -14,6 +14,9 @@ class CCivilianPed : public CPed
  	uint32 m_nStealWishList[16];
  	bool m_bAttractorUnk;
  	int32 m_nAttractorCycleState;
 +	bool m_bRemembersPlayer;
++	bool m_bPlayerMemoryReacted;
 +	uint32 m_nPlayerMemoryExpiry;
-+	uint32 m_nNextPlayerMemoryReaction;
  public:
  	CCivilianPed(ePedType, uint32);
  	~CCivilianPed(void) { }
  
  	void CivilianAI(void);
-+	void UpdatePlayerMemory(void);
++	bool UpdatePlayerMemory(void);
  	void ProcessControl(void);
  	void UseNearbyAttractors(void);
  	void FindNearbyAttractorsSectorList(CPtrList&, float&, C2dEffect*&, CEntity*&);
 diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 --- a/src/peds/CivilianPed.cpp
 +++ b/src/peds/CivilianPed.cpp
-@@ -44,11 +44,114 @@
+@@ -43,11 +43,83 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
  	}
  	m_nAttractorCycleState = 0;
  	m_bAttractorUnk = (CGeneral::GetRandomNumberInRange(0.0f, 1.0f) < 1.25f);
 +	m_bRemembersPlayer = false;
++	m_bPlayerMemoryReacted = false;
 +	m_nPlayerMemoryExpiry = 0;
-+	m_nNextPlayerMemoryReaction = 0;
  }
  
-+static bool
-+IsPlayerIncidentWorthRemembering(eEventType type)
-+{
-+	switch (type) {
-+	case EVENT_ASSAULT:
-+	case EVENT_ASSAULT_POLICE:
-+	case EVENT_GUNSHOT:
-+	case EVENT_STEAL_CAR:
-+	case EVENT_HIT_AND_RUN:
-+	case EVENT_HIT_AND_RUN_COP:
-+	case EVENT_SHOOT_PED:
-+	case EVENT_SHOOT_COP:
-+	case EVENT_EXPLOSION:
-+	case EVENT_PED_SET_ON_FIRE:
-+	case EVENT_COP_SET_ON_FIRE:
-+	case EVENT_CAR_SET_ON_FIRE:
-+	case EVENT_ASSAULT_NASTYWEAPON:
-+	case EVENT_ASSAULT_NASTYWEAPON_POLICE:
-+		return true;
-+	default:
-+		return false;
-+	}
-+}
-+
- void
++bool
 +CCivilianPed::UpdatePlayerMemory(void)
 +{
 +	if (!IsPedInControl() || DyingOrDead())
-+		return;
++		return false;
 +
 +	CPed *player = FindPlayerPed();
 +	if (!player)
-+		return;
++		return false;
 +
 +	const uint32 now = CTimer::GetTimeInMilliseconds();
-+
-+	// Each pedestrian keeps this memory only in the current game session.
 +	if (m_bRemembersPlayer && (int32)(now - m_nPlayerMemoryExpiry) >= 0) {
 +		m_bRemembersPlayer = false;
++		m_bPlayerMemoryReacted = false;
 +		m_nPlayerMemoryExpiry = 0;
-+		m_nNextPlayerMemoryReaction = 0;
 +	}
 +
-+	if (m_bRemembersPlayer) {
-+		if ((int32)(now - m_nNextPlayerMemoryReaction) < 0 || m_objective != OBJECTIVE_NONE)
-+			return;
++	// Build a memory only from a nearby event caused by the player.
++	// Ordinary proximity or simply seeing the player never creates a memory.
++	if (!m_bRemembersPlayer) {
++		for (int i = 0; i < NUMEVENTS; i++) {
++			const CEvent &event = gaEvent[i];
++			bool relevantEvent = event.type == EVENT_STEAL_CAR ||
++				 event.type == EVENT_HIT_AND_RUN ||
++				 event.type == EVENT_HIT_AND_RUN_COP;
++			if (!relevantEvent || event.criminal != player ||
++				(int32)(now - event.timeout) >= 0)
++				continue;
 +
-+		if ((player->GetPosition() - GetPosition()).MagnitudeSqr2D() > sq(18.0f) ||
-+		    !CanSeeEntity(player))
-+			return;
++			if ((GetPosition() - event.posn).MagnitudeSqr2D() > sq(18.0f) ||
++				(player->GetPosition() - event.posn).MagnitudeSqr2D() > sq(25.0f) ||
++				!CanSeeEntity(player))
++				continue;
 +
-+		CVector ourEye = GetPosition();
-+		CVector playerEye = player->GetPosition();
-+		ourEye.z += 1.0f;
-+		playerEye.z += 1.0f;
-+		if (!CWorld::GetIsLineOfSightClear(ourEye, playerEye, true, true, false, false, false, false, false))
-+			return;
++			CVector ourEye = GetPosition();
++			CVector playerEye = player->GetPosition();
++			ourEye.z += 1.0f;
++			playerEye.z += 1.0f;
++			if (!CWorld::GetIsLineOfSightClear(ourEye, playerEye,
++				true, true, false, false, false, false, false))
++				continue;
 +
-+		// A high-temperament pedestrian may confront the player; others flee.
-+		if (m_pedStats && m_pedStats->m_temper > m_pedStats->m_fear + 10) {
-+			SetObjective(OBJECTIVE_KILL_CHAR_ON_FOOT, player);
-+		} else {
-+			SetFindPathAndFlee(player, 8000);
-+			SetMoveState(PEDMOVE_RUN);
++			m_bRemembersPlayer = true;
++			m_bPlayerMemoryReacted = false;
++			m_nPlayerMemoryExpiry = now + 60000;
++			break;
 +		}
-+		m_nNextPlayerMemoryReaction = now + 5000;
++	}
++
++	if (!m_bRemembersPlayer || m_bPlayerMemoryReacted ||
++		(player->GetPosition() - GetPosition()).MagnitudeSqr2D() > sq(18.0f) ||
++		!CanSeeEntity(player))
++		return false;
++
++	CVector ourEye = GetPosition();
++	CVector playerEye = player->GetPosition();
++	ourEye.z += 1.0f;
++	playerEye.z += 1.0f;
++	if (!CWorld::GetIsLineOfSightClear(ourEye, playerEye,
++		true, true, false, false, false, false, false))
++		return false;
++
++	// Fearful pedestrians run away. More temperamental pedestrians keep their
++	// distance at a walk while watching the player; neither reaction changes physics.
++	if (m_pedStats && m_pedStats->m_fear > m_pedStats->m_temper) {
++		SetFindPathAndFlee(player, 8000);
++		SetMoveState(PEDMOVE_RUN);
++	} else {
++		SetFindPathAndFlee(player, 5000, true);
++		SetMoveState(PEDMOVE_WALK);
 +		SetLookFlag(player, false);
-+		SetLookTimer(500);
-+		return;
++		SetLookTimer(1500);
 +	}
 +
-+	// A memory is created only for a recorded player-caused incident that
-+	// occurred nearby and was actually visible to this pedestrian.
-+	for (int i = 0; i < NUMEVENTS; i++) {
-+		const CEvent &event = gaEvent[i];
-+		if (event.type == EVENT_NULL || event.criminal != player ||
-+		    !IsPlayerIncidentWorthRemembering(event.type) ||
-+		    (int32)(now - event.timeout) >= 0)
-+			continue;
-+
-+		if ((GetPosition() - event.posn).MagnitudeSqr2D() > sq(20.0f) ||
-+		    (player->GetPosition() - event.posn).MagnitudeSqr2D() > sq(28.0f) ||
-+		    !CanSeeEntity(player))
-+			continue;
-+
-+		CVector ourEye = GetPosition();
-+		CVector playerEye = player->GetPosition();
-+		ourEye.z += 1.0f;
-+		playerEye.z += 1.0f;
-+		if (!CWorld::GetIsLineOfSightClear(ourEye, playerEye, true, true, false, false, false, false, false))
-+			continue;
-+
-+		m_bRemembersPlayer = true;
-+		m_nPlayerMemoryExpiry = now + 60000;
-+		m_nNextPlayerMemoryReaction = now;
-+		break;
-+	}
++	m_bPlayerMemoryReacted = true;
++	return true;
 +}
 +
-+void
+ void
  CCivilianPed::CivilianAI(void)
  {
-+	UpdatePlayerMemory();
++	if (UpdatePlayerMemory())
++		return;
++
  	if (CTimer::GetTimeInMilliseconds() <= m_fleeTimer || m_objective != OBJECTIVE_NONE && !bRespondsToThreats
  		|| !IsPedInControl())  {
  
+diff --git a/web/src/main.ts b/web/src/main.ts
+--- a/web/src/main.ts
++++ b/web/src/main.ts
+@@ -221,7 +221,7 @@ const ENGINE_URL = "/reVC.js";
