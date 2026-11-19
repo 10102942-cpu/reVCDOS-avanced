@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: npc-memory-engine-build
+  group: npc-memory-engine-build-v2
   cancel-in-progress: true
 
 jobs:
