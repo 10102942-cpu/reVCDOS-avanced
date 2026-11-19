@@ -1,7 +1,7 @@
 diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
 --- a/src/peds/CivilianPed.h
 +++ b/src/peds/CivilianPed.h
-@@ -12,8 +12,12 @@ class CCivilianPed : public CPed
+@@ -12,9 +12,13 @@ class CCivilianPed : public CPed
  	uint32 m_nStealWishList[16];
  	bool m_bAttractorUnk;
  	int32 m_nAttractorCycleState;
@@ -18,7 +18,7 @@ diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
 diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 --- a/src/peds/CivilianPed.cpp
 +++ b/src/peds/CivilianPed.cpp
-@@ -44,9 +44,92 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
+@@ -44,9 +44,93 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
  	}
  	m_nAttractorCycleState = 0;
  	m_bAttractorUnk = (CGeneral::GetRandomNumberInRange(0.0f, 1.0f) < 1.25f);
