@@ -1,8 +1,8 @@
 diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
-index 0ea125d3432a906acf42b3bf19a49964e411677d..0000000000000000000000000000000000000000 100644
 --- a/src/peds/CivilianPed.h
 +++ b/src/peds/CivilianPed.h
-@@ -12,11 +12,15 @@ class CCivilianPed : public CPed
+@@ -12,15 +12,15 @@
+ 	uint32 m_nStealWishList[16];
  	bool m_bAttractorUnk;
  	int32 m_nAttractorCycleState;
 +	bool m_bRemembersPlayer;
@@ -18,10 +18,9 @@ index 0ea125d3432a906acf42b3bf19a49964e411677d..00000000000000000000000000000000
  	void UseNearbyAttractors(void);
  	void FindNearbyAttractorsSectorList(CPtrList&, float&, C2dEffect*&, CEntity*&);
 diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
-index 84783ff06d52b04861838b5736f3bbb6b374a24b..0000000000000000000000000000000000000000 100644
 --- a/src/peds/CivilianPed.cpp
 +++ b/src/peds/CivilianPed.cpp
-@@ -43,6 +43,9 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
+@@ -44,115 +44,115 @@
  	}
  	m_nAttractorCycleState = 0;
  	m_bAttractorUnk = (CGeneral::GetRandomNumberInRange(0.0f, 1.0f) < 1.25f);
@@ -30,6 +29,7 @@ index 84783ff06d52b04861838b5736f3bbb6b374a24b..00000000000000000000000000000000
 +	m_nNextPlayerMemoryReaction = 0;
  }
  
++
 +static bool
 +IsPlayerIncidentWorthRemembering(eEventType type)
 +{
@@ -54,7 +54,7 @@ index 84783ff06d52b04861838b5736f3bbb6b374a24b..00000000000000000000000000000000
 +	}
 +}
 +
-+void
+ void
 +CCivilianPed::UpdatePlayerMemory(void)
 +{
 +	if (!IsPedInControl() || DyingOrDead())
@@ -66,7 +66,7 @@ index 84783ff06d52b04861838b5736f3bbb6b374a24b..00000000000000000000000000000000
 +
 +	const uint32 now = CTimer::GetTimeInMilliseconds();
 +
-+	// Memory is local to this ped and expires during the current session.
++	// Each pedestrian keeps this memory only in the current game session.
 +	if (m_bRemembersPlayer && (int32)(now - m_nPlayerMemoryExpiry) >= 0) {
 +		m_bRemembersPlayer = false;
 +		m_nPlayerMemoryExpiry = 0;
@@ -88,7 +88,7 @@ index 84783ff06d52b04861838b5736f3bbb6b374a24b..00000000000000000000000000000000
 +		if (!CWorld::GetIsLineOfSightClear(ourEye, playerEye, true, true, false, false, false, false, false))
 +			return;
 +
-+		// Hot-tempered pedestrians may confront the player; fearful ones flee.
++		// A high-temperament pedestrian may confront the player; others flee.
 +		if (m_pedStats && m_pedStats->m_temper > m_pedStats->m_fear + 10) {
 +			SetObjective(OBJECTIVE_KILL_CHAR_ON_FOOT, player);
 +		} else {
@@ -102,7 +102,7 @@ index 84783ff06d52b04861838b5736f3bbb6b374a24b..00000000000000000000000000000000
 +	}
 +
 +	// A memory is created only for a recorded player-caused incident that
-+	// happened close enough for this pedestrian to have witnessed it.
++	// occurred nearby and was actually visible to this pedestrian.
 +	for (int i = 0; i < NUMEVENTS; i++) {
 +		const CEvent &event = gaEvent[i];
 +		if (event.type == EVENT_NULL || event.criminal != player ||
@@ -129,10 +129,10 @@ index 84783ff06d52b04861838b5736f3bbb6b374a24b..00000000000000000000000000000000
 +	}
 +}
 +
- void
++void
  CCivilianPed::CivilianAI(void)
  {
 +	UpdatePlayerMemory();
-+
  	if (CTimer::GetTimeInMilliseconds() <= m_fleeTimer || m_objective != OBJECTIVE_NONE && !bRespondsToThreats
  		|| !IsPedInControl())  {
+ 
