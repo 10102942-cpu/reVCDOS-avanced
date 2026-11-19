@@ -1,0 +1,89 @@
+name: Build NPC-memory Vice City web engine
+
+on:
+  push:
+    branches:
+      - npc-memory-reactions
+    paths:
+      - "engine-patches/npc-memory-reactions.patch"
+      - ".github/workflows/build-npc-engine.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: npc-memory-engine-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout this fork
+        uses: actions/checkout@v4
+
+      - name: Checkout wasm.ltd workspace
+        uses: actions/checkout@v4
+        with:
+          repository: origami-ltd/wasm.com.br
+          ref: 4f050344abea8c2735a9db9269644d1ff2ab130f
+          path: workspace
+
+      - name: Checkout Emscripten reVC source
+        uses: actions/checkout@v4
+        with:
+          repository: origami-ltd/wasm-revc
+          ref: acde392e0ba582156fcf516dbaeb73b73adebb3e
+          path: workspace/games/wasm-vice-city
+          submodules: recursive
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+          actions-cache-folder: emsdk-cache
+
+      - name: Install native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Apply NPC memory patch
+        run: |
+          git -C workspace/games/wasm-vice-city apply "$GITHUB_WORKSPACE/engine-patches/npc-memory-reactions.patch"
+
+      - name: Install web workspace dependencies
+        working-directory: workspace
+        run: npm ci
+
+      - name: Build WebAssembly engine
+        working-directory: workspace/games/wasm-vice-city
+        env:
+          REVC_AUDIO: OAL
+        run: ./scripts/build-web.sh clean
+
+      - name: Build browser interface for subpath
+        working-directory: workspace
+        run: npm run build --workspace @wasm/vice-web -- --base=/npc-engine/
+
+      - name: Publish preview files into this fork
+        run: |
+          mkdir -p dist/npc-engine
+          cp -a workspace/games/wasm-vice-city/web/dist/. dist/npc-engine/
+          cat > dist/npc-engine/BUILD-INFO.txt <<'EOF'
+          NPC-memory reVC browser preview.
+          Built by GitHub Actions from pinned wasm.ltd/reVC sources.
+          Requires WebGL 2, SharedArrayBuffer, HTTPS/localhost, and a compatible local GTA Vice City installation selected by the player.
+          The original DOS.Zone port remains at the repository root.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/npc-engine
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+          else
+            git commit -m "Build NPC-memory Vice City WebAssembly preview"
+            git push
+          fi
