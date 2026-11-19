@@ -1,7 +1,7 @@
 diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
 --- a/src/peds/CivilianPed.h
 +++ b/src/peds/CivilianPed.h
-@@ -14,6 +14,9 @@ class CCivilianPed : public CPed
+@@ -12,8 +12,12 @@ class CCivilianPed : public CPed
  	uint32 m_nStealWishList[16];
  	bool m_bAttractorUnk;
  	int32 m_nAttractorCycleState;
@@ -15,12 +15,10 @@ diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
  	void CivilianAI(void);
 +	bool UpdatePlayerMemory(void);
  	void ProcessControl(void);
- 	void UseNearbyAttractors(void);
- 	void FindNearbyAttractorsSectorList(CPtrList&, float&, C2dEffect*&, CEntity*&);
 diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 --- a/src/peds/CivilianPed.cpp
 +++ b/src/peds/CivilianPed.cpp
-@@ -43,11 +43,83 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
+@@ -44,9 +44,91 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
  	}
  	m_nAttractorCycleState = 0;
  	m_bAttractorUnk = (CGeneral::GetRandomNumberInRange(0.0f, 1.0f) < 1.25f);
@@ -114,9 +112,9 @@ diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 +		return;
 +
  	if (CTimer::GetTimeInMilliseconds() <= m_fleeTimer || m_objective != OBJECTIVE_NONE && !bRespondsToThreats
- 		|| !IsPedInControl())  {
- 
 diff --git a/web/src/main.ts b/web/src/main.ts
 --- a/web/src/main.ts
 +++ b/web/src/main.ts
-@@ -221,7 +221,7 @@ const ENGINE_URL = "/reVC.js";
+@@ -224,1 +224,1 @@
+-const ENGINE_URL = "/reVC.js";
++const ENGINE_URL = `${import.meta.env.BASE_URL}reVC.js`;
