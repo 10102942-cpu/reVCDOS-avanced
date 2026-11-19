@@ -18,7 +18,7 @@ diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
 diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 --- a/src/peds/CivilianPed.cpp
 +++ b/src/peds/CivilianPed.cpp
-@@ -44,9 +44,91 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
+@@ -44,9 +44,92 @@ CCivilianPed::CCivilianPed(ePedType pedtype, uint32 mi) : CPed(pedtype)
  	}
  	m_nAttractorCycleState = 0;
  	m_bAttractorUnk = (CGeneral::GetRandomNumberInRange(0.0f, 1.0f) < 1.25f);
