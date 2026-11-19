@@ -56,7 +56,7 @@ jobs:
 
       - name: Install web workspace dependencies
         working-directory: workspace
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build WebAssembly engine
         working-directory: workspace/games/wasm-vice-city
