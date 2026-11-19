@@ -1,7 +1,7 @@
 diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
 --- a/src/peds/CivilianPed.h
 +++ b/src/peds/CivilianPed.h
-@@ -12,15 +12,15 @@
+@@ -12,11 +12,15 @@
  	uint32 m_nStealWishList[16];
  	bool m_bAttractorUnk;
  	int32 m_nAttractorCycleState;
@@ -20,7 +20,7 @@ diff --git a/src/peds/CivilianPed.h b/src/peds/CivilianPed.h
 diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 --- a/src/peds/CivilianPed.cpp
 +++ b/src/peds/CivilianPed.cpp
-@@ -44,115 +44,115 @@
+@@ -44,11 +44,114 @@
  	}
  	m_nAttractorCycleState = 0;
  	m_bAttractorUnk = (CGeneral::GetRandomNumberInRange(0.0f, 1.0f) < 1.25f);
@@ -29,7 +29,6 @@ diff --git a/src/peds/CivilianPed.cpp b/src/peds/CivilianPed.cpp
 +	m_nNextPlayerMemoryReaction = 0;
  }
  
-+
 +static bool
 +IsPlayerIncidentWorthRemembering(eEventType type)
 +{
